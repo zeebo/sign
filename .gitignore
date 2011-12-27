@@ -1,0 +1,5 @@
+sign
+*.6
+*.o
+_obj/
+main.go
