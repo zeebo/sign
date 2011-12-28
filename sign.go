@@ -4,6 +4,7 @@ package sign
 import (
 	"bytes"
 	"crypto/hmac"
+	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
 	"json"
@@ -111,7 +112,11 @@ func (s Signer) Unsign(data string, obj interface{}, age int64) os.Error {
 		return err
 	}
 
-	if csig != sig {
+	if len(csig) != len(sig) {
+		return BadSignature
+	}
+
+	if subtle.ConstantTimeCompare([]uint8(csig), []uint8(sig)) != 1 {
 		return BadSignature
 	}
 
