@@ -42,6 +42,7 @@ func timestamp() (string, os.Error) {
 	return buf.String(), nil
 }
 
+//Signature returns a URL-safe base64 encoded signature for the given string
 func (s Signer) Signature(val string) (string, os.Error) {
 	hm := hmac.NewSHA1(s.Key)
 	hm.Write([]uint8(val))
@@ -58,7 +59,9 @@ func (s Signer) Signature(val string) (string, os.Error) {
 	return buf.String(), nil
 }
 
-//Sign returns a URL-safe, sha1 signed base64 encoded json string.
+//Sign returns a URL-safe, sha1 signed base64 encoded string that represents
+//the given object using json encoding. It includes a timestamp of the creation
+//of the signature for expiration times.
 func (s Signer) Sign(obj interface{}) (string, os.Error) {
 	var buf bytes.Buffer
 
