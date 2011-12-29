@@ -10,22 +10,21 @@ var s = sign.Signer{[]byte("foo")}
 
 func ExampleSigner() {
 	s := sign.Signer{[]byte("my secret key")}
-	x := "some complicated object"
-	val, err := s.Sign(x)
+	var x string = "some complicated object"
+	sig, err := s.Sign(x)
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Print("Our signature:", sig)
 
-	//print our signature
-	log.Println(val)
-
-	x = ""
-	//reload it with a 10 second max duration
-	if err := s.Unsign(val, &x, 10e9); err != nil {
+	var y string
+	if err := s.Unsign(sig, &y, 10e9); err != nil {
 		log.Fatal(err)
 	}
-	//prints the complicated object
-	log.Println(x)
+
+	if y == x {
+		log.Print("value loaded sucessfully!")
+	}
 }
 
 func TestBadSignature(t *testing.T) {
