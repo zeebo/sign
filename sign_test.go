@@ -43,7 +43,7 @@ func TestTimeout(t *testing.T) {
 
 	//way more than 1 nanosecond has passed.
 	if err := s.Unsign(val, &x, 1); err != sign.SignatureExpired {
-		t.Fatal("Signature did not expire")
+		t.Fatal("Signature did not expire:", err)
 	}
 }
 

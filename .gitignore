@@ -1,5 +1,6 @@
 sign
 *.6
 *.o
+_test/
 _obj/
 main.go

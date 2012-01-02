@@ -6,9 +6,9 @@ import (
 	"crypto/hmac"
 	"crypto/subtle"
 	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"fmt"
-	"json"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -18,8 +18,8 @@ const sep = ":"
 
 //Error types
 var (
-	BadSignature     = os.NewError("Bad Signature")
-	SignatureExpired = os.NewError("Signature Expired")
+	BadSignature     = errors.New("Bad Signature")
+	SignatureExpired = errors.New("Signature Expired")
 )
 
 type Signer struct {
@@ -27,12 +27,12 @@ type Signer struct {
 }
 
 //timestamp returns a URL-safe base64 encoded nanosecond timestamp
-func timestamp() (string, os.Error) {
-	now := time.Nanoseconds()
+func timestamp() (string, error) {
+	now := time.Now()
 
 	var buf bytes.Buffer
 	enc := base64.NewEncoder(base64.URLEncoding, &buf)
-	if _, err := fmt.Fprintf(enc, "%d", now); err != nil {
+	if _, err := fmt.Fprintf(enc, "%d", now.UnixNano()); err != nil {
 		return "", err
 	}
 	//must close to finish writing to buffer
@@ -44,13 +44,13 @@ func timestamp() (string, os.Error) {
 }
 
 //Signature returns a URL-safe base64 encoded signature for the given string
-func (s Signer) Signature(val string) (string, os.Error) {
+func (s Signer) Signature(val string) (string, error) {
 	hm := hmac.NewSHA1(s.Key)
 	hm.Write([]uint8(val))
 
 	var buf bytes.Buffer
 	enc := base64.NewEncoder(base64.URLEncoding, &buf)
-	if _, err := enc.Write(hm.Sum()); err != nil {
+	if _, err := enc.Write(hm.Sum(nil)); err != nil {
 		return "", err
 	}
 	if err := enc.Close(); err != nil {
@@ -63,7 +63,7 @@ func (s Signer) Signature(val string) (string, os.Error) {
 //Sign returns a URL-safe, sha1 signed base64 encoded string that represents
 //the given object using json encoding. It includes a timestamp of the creation
 //of the signature for expiration times.
-func (s Signer) Sign(obj interface{}) (string, os.Error) {
+func (s Signer) Sign(obj interface{}) (string, error) {
 	var buf bytes.Buffer
 
 	b64enc := base64.NewEncoder(base64.URLEncoding, &buf)
@@ -95,13 +95,13 @@ func (s Signer) Sign(obj interface{}) (string, os.Error) {
 //Unsign loads the signature data into the object passed in using the json
 //library. Any value greater than 0 for age makes the signature expire after
 //that many nanoseconds.
-func (s Signer) Unsign(data string, obj interface{}, age int64) os.Error {
+func (s Signer) Unsign(data string, obj interface{}, age time.Duration) error {
 	if strings.Count(data, ":") != 2 {
 		return BadSignature
 	}
 
 	//grab now before we do a buncha computations
-	now := time.Nanoseconds()
+	now := time.Now()
 
 	chunks := strings.SplitN(data, sep, 3)
 	value, ts, sig := chunks[0], chunks[1], chunks[2]
@@ -127,12 +127,14 @@ func (s Signer) Unsign(data string, obj interface{}, age int64) os.Error {
 			return BadSignature
 		}
 
-		cnow, err := strconv.Atoi64(string(tsbyte))
+		cnow, err := strconv.ParseInt(string(tsbyte), 10, 64)
 		if err != nil {
 			return BadSignature
 		}
 
-		if now-cnow > age {
+		onow := time.Unix(0, cnow)
+
+		if now.Sub(onow) > age {
 			return SignatureExpired
 		}
 	}
