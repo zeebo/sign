@@ -1,15 +1,14 @@
-package sign_test
+package sign
 
 import (
 	"log"
-	"sign"
 	"testing"
 )
 
-var s = sign.Signer{[]byte("foo")}
+var s = Signer{[]byte("foo")}
 
 func ExampleSigner() {
-	s := sign.Signer{[]byte("my secret key")}
+	s := Signer{[]byte("my secret key")}
 	var x string = "some complicated object"
 	sig, err := s.Sign(x)
 	if err != nil {
@@ -42,7 +41,7 @@ func TestTimeout(t *testing.T) {
 	}
 
 	//way more than 1 nanosecond has passed.
-	if err := s.Unsign(val, &x, 1); err != sign.SignatureExpired {
+	if err := s.Unsign(val, &x, 1); err != SignatureExpired {
 		t.Fatal("Signature did not expire:", err)
 	}
 }

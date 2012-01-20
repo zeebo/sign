@@ -4,6 +4,7 @@ package sign
 import (
 	"bytes"
 	"crypto/hmac"
+	"crypto/sha1"
 	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
@@ -45,7 +46,7 @@ func timestamp() (string, error) {
 
 //Signature returns a URL-safe base64 encoded signature for the given string
 func (s Signer) Signature(val string) (string, error) {
-	hm := hmac.NewSHA1(s.Key)
+	hm := hmac.New(sha1.New, s.Key)
 	hm.Write([]uint8(val))
 
 	var buf bytes.Buffer
